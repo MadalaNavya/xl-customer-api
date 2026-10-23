@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="xl-customer-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="xl-customer-api-config" api="resource::636b0826-cc69-44b4-8eae-5333e074d47d:xl-customer-api:1.0.0:raml:zip:xl-customer-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <api-gateway:autodiscovery apiId="21242528" ignoreBasePath="false" doc:name="API Autodiscovery" doc:id="e5c2404b-46d8-43a5-a980-2cabe1f15750" flowRef="xl-customer-api-main" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="9205ab08-75b7-4d15-a831-030a5a9a4701" basePath="/api" responseTimeout="30000">
+        <http:request-connection protocol="HTTPS" host="${pl.host}" />
+    </http:request-config>
+    <configuration-properties doc:name="Configuration properties" doc:id="c9f80982-081a-46f6-910d-e0327fbbb8d9" file="xl-customer-api-properties.yaml" />
+    <flow name="xl-customer-api-main">
+        <http:listener config-ref="xl-customer-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="xl-customer-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	status: 400,
+	message: "Bad request",
+	Error:  error.description
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Method not allowed",
+	Error: error.description
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[405]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Unsupported media type",
+	Error: error.descriptiom
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[415]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="xl-customer-api-console">
+        <http:listener config-ref="xl-customer-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="xl-customer-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="xl-customer-apiFlow" doc:id="369fb1c3-59e7-4f68-891b-592dd826bbfb">
+        <logger level="INFO" doc:name="Logger" doc:id="038e6dd3-3b7d-4fb2-bfc3-1781e005ba92" />
+    </flow>
+    <flow name="get:\customer\(id):xl-customer-api-config">
+        <ee:transform doc:name="Transform Message" doc:id="948d252c-dbf0-47dd-9295-a65037a0b987">
+            <ee:variables>
+                <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+                <ee:set-variable variableName="correlationId"><![CDATA[attributes.headers['correlationId']]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <try doc:name="Try" doc:id="30c2e88a-42ee-4b48-b6c3-e50ebd3ca6c2">
+            <http:request method="GET" doc:name="Request" doc:id="5281d9ed-14ca-494f-8bfe-ce334a559e83" config-ref="HTTP_Request_configuration" path="/customer/{id}" target="response" sendCorrelationId="ALWAYS" correlationId="#[vars.correlationId]">
+                <http:headers><![CDATA[#[output application/java
+---
+{
+	correlationId : vars.correlationId,
+	client_id :  p('pl.clientId'),
+	client_secret : p('pl.clientSecret')
+}]]]></http:headers>
+                <http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.id
+}]]]></http:uri-params>
+            </http:request>
+            <error-handler>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1b8e7e82-eaa0-415b-b430-e63da8600f9e" type="ANY">
+                    <ee:transform doc:name="Transform Message" doc:id="65107d58-8c97-4432-ba9f-8f75f79d9371">
+                        <ee:message>
+                            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Transaction failed",
+	"correltionId": correlationId,
+	"Error":  error.description,
+	"Description" : error.detailedDescription
+}]]></ee:set-payload>
+                        </ee:message>
+                    </ee:transform>
+                </on-error-propagate>
+            </error-handler>
+        </try>
+        <ee:transform doc:name="Transform Message" doc:id="d1331e4b-a545-4ec2-8bf2-2df2cce2e4fc">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output text/json
+---
+{
+	"status": "Success",
+	"correlationId": vars.correlationId,
+	"Customer Details": vars.response	
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="Logger" doc:id="d224115c-c52d-4ce2-b23e-12f540c94c26" message="Customer Details from pl-layer: #[vars.response] for correlation Id #[vars.reponse.correlationId]" />
+    </flow>
+    <flow name="post:\customers:application\json:xl-customer-api-config">
+        <http:listener doc:name="Listener" doc:id="2a96f161-3faf-44c3-8fb9-0d0c459ceef9" config-ref="xl-customer-api-httpListenerConfig" path="/customers" />
+        <logger level="INFO" doc:name="Logger" doc:id="fe5c6f5f-6638-4808-821b-8e45e75043a4" message="post customers flow started." />
+        <ee:transform doc:name="Transform Message" doc:id="7bfeeaaa-926d-456d-acfd-618c226dd3d6">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="correlationId"><![CDATA[attributes.headers['correlationId']]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <try doc:name="Try" doc:id="d20d5d85-c8cb-4860-a081-b5685f132910">
+            <http:request method="POST" doc:name="Request" doc:id="cc52bbc9-55d5-4f46-83f9-8611e90057a8" config-ref="HTTP_Request_configuration" path="/customers" sendCorrelationId="ALWAYS" correlationId="#[vars.correationId]">
+                <http:headers><![CDATA[#[output application/java
+---
+{
+	correlationId : vars.correlationId,
+	client_id :  p('pl.clientId'),
+	client_secret : p('pl.clientSecret')
+}]]]></http:headers>
+            </http:request>
+            <error-handler>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0d703c6f-a5df-4fd2-bbb8-f311fed2c6d7">
+                    <ee:transform doc:name="Transform Message" doc:id="c51d01b9-d95c-40a4-a660-e292d5c34e6c">
+                        <ee:message>
+                            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Transaction failed",
+	"correltionId": correlationId,
+	"Error":  error.description,
+	"Description" : error.detailedDescription
+}]]></ee:set-payload>
+                        </ee:message>
+                    </ee:transform>
+                </on-error-propagate>
+            </error-handler>
+        </try>
+        <ee:transform doc:name="Transform Message" doc:id="b199f619-0531-4e43-8d4f-9c37b90662e1">
+            <ee:message>
+                <ee:set-payload><![CDATA["customer created successfully"]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="Logger" doc:id="50689d72-abf4-454a-b05f-756af05e4255" message="&quot;Customer created Sucessfully and gcid is #[payload.gcid]&quot;" />
+    </flow>
+    <flow name="put:\customer\(id):xl-customer-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="bd472327-20fc-4542-b83e-d24ee10519ff" message="put\customer\(id) fow started" />
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+                <ee:set-variable variableName="correlationId"><![CDATA[attributes.headers['correlationId']]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <try doc:name="Try" doc:id="89bd9319-1424-4b28-925f-7486bbe3d034">
+            <http:request method="PUT" doc:name="Request" doc:id="d0ac1880-b594-4a82-afc2-81fb02f6b163" config-ref="HTTP_Request_configuration" path="/customer/{id}" sendCorrelationId="ALWAYS" correlationId="#[vars.correlationId]">
+                <http:headers><![CDATA[#[output application/java
+---
+{
+	correlationId : vars.correlationId,
+	client_id :  p('pl.clientId'),
+	client_secret : p('pl.clientSecret')
+}]]]></http:headers>
+                <http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.id
+}]]]></http:uri-params>
+            </http:request>
+            <error-handler>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="80bd4c93-3a6e-4358-affa-8f41a819e7ff">
+                    <ee:transform doc:name="Transform Message" doc:id="5bfb5e4a-7635-4cee-b856-0df7f2f162df">
+                        <ee:message>
+                            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Transaction failed",
+	"correltionId": correlationId,
+	"Error":  error.description,
+	"Description" : error.detailedDescription
+}]]></ee:set-payload>
+                        </ee:message>
+                    </ee:transform>
+                </on-error-propagate>
+            </error-handler>
+        </try>
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "cutomer updated sucessfully for the id:"++ (payload.items[0].id default "")
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\customer\(id):xl-customer-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="4538a048-a26a-4a1b-ab1f-1fc5df4a9745" message="delete\customer\(id) fow started" />
+        <ee:transform doc:name="Transform Message" doc:id="e04f5ba4-15f6-4d2a-b8dc-a5a27e2b0547">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+                <ee:set-variable variableName="correlationId"><![CDATA[attributes.headers['correlationId']]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <try doc:name="Try" doc:id="2f10b6dd-a6a5-4d1a-a19c-018c3bcf1644">
+            <http:request method="DELETE" doc:name="Request" doc:id="cd32527f-a43a-4c12-82d4-1965d115badd" config-ref="HTTP_Request_configuration" path="/customer/{id}" sendCorrelationId="ALWAYS" correlationId="#[vars.correlationId]">
+                <http:headers><![CDATA[#[output application/java
+---
+{
+	correlationId : vars.correlationId,
+	client_id :  p('pl.clientId'),
+	client_secret : p('pl.clientSecret')
+}]]]></http:headers>
+                <http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.id
+}]]]></http:uri-params>
+            </http:request>
+            <error-handler>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3e44e4d5-a9d7-4fb4-aee4-278c32831c82">
+                    <ee:transform doc:name="Transform Message" doc:id="078a75fd-24ed-4532-88b0-151b0a231163">
+                        <ee:message>
+                            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Transaction failed",
+	"correltionId": correlationId,
+	"Error":  error.description,
+	"Description" : error.detailedDescription
+}]]></ee:set-payload>
+                        </ee:message>
+                    </ee:transform>
+                </on-error-propagate>
+            </error-handler>
+        </try>
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "cutomer deleted sucessfully for the id:"++  (payload.items[0].id default "")
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
