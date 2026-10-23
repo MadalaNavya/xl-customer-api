@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>bff1a272-87d0-4c73-8847-0488185750d2</groupId>
+	<groupId>636b0826-cc69-44b4-8eae-5333e074d47d</groupId>
 	<artifactId>xl-customer-env-api</artifactId>
 	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
