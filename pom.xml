@@ -30,7 +30,18 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-					<classifier>---- select project type ----</classifier>
+					 <cloudHubDeployment>
+                    				<uri>https://anypoint.mulesoft.com</uri>
+                   				<muleVersion>${mule.version}</muleVersion>
+                    				<username>${anypoint.username}</username>
+                    				<password>${anypoint.password}</password>
+                    				
+                                                <applicationName>${cloudhub.application.name}</applicationName>
+                    				<environment>${cloudhub.environment}</environment>
+                    				<workers>1</workers>
+                    				<workerType>Micro</workerType>
+                    				<objectStoreV2>true</objectStoreV2>
+					 </cloudHubDeployment>
 				</configuration>
 			</plugin>
 		</plugins>
