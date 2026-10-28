@@ -38,8 +38,8 @@
                     				
                                     <applicationName>${cloudhub.application.name}</applicationName>
                     				<environment>${cloudhub.environment}</environment>
-                    				<workers>1</workers>
-                    				<workerType>Micro</workerType>
+                    				<replicas>1</replicas>
+        							<vCores>0.1</vCores> 
                     				<objectStoreV2>true</objectStoreV2>
 					 </cloudhub2Deployment>
 				</configuration>
