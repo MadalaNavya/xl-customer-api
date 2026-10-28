@@ -35,7 +35,8 @@
                    				    <muleVersion>${mule.version}</muleVersion>
                     				<username>${anypoint.username}</username>
                     				<password>${anypoint.password}</password>
-                    				
+						 			<target>Cloudhub-US-East-2</target> 
+                    				<provider>MC</provider>
                                     <applicationName>${cloudhub.application.name}</applicationName>
                     				<environment>${cloudhub.environment}</environment>
                     				<replicas>1</replicas>
